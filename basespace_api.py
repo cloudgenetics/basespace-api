@@ -74,9 +74,6 @@ class BaseSpaceAPI():
         noffsets = int(math.ceil(float(total_count)/1000.0))
 
         hrefs = []
-        hrefcontents = []
-        paths = []
-
         for index in range(noffsets):
             offset = 1000*index
             url = self.baseurl + 'datasets?inputbiosamples=%s&access_token=%s&limit=1000&Offset=%s' % (
@@ -88,38 +85,18 @@ class BaseSpaceAPI():
                 hrefs.append(href)
 
         # Get the download filepath (HrefContent) and filename (Path)
-        files = []
+        datasets = []
         for href in hrefs:
             url = '%s?access_token=%s' % (href, self.access_token)
             response = self.session.get_json(url)
-            for dataset in response['Items']:
-                hrefcontent = dataset['HrefContent']
-                path = dataset['Path']
-                files.append((hrefcontent, path))
+            for data in response['Items']:
+                dataset = dict.fromkeys(['href', 'path'])
+                dataset['href'] = data['HrefContent']
+                dataset['path'] = data['Path']
+                datasets.append(dataset)
 
-        print("Files: {} ".format(files))
-
-        for file in files:
-            url = '%s?access_token=%s' % (file[0], self.access_token)
-            print('downloading %s' % (file[0]))
-            self.download_dataset(url, file[1])
-
-        """
-        for index in range(len(hrefs)):
-            url = '%s?access_token=%s' % (hrefs[index], self.access_token)
-            response = self.session.get_json(url)
-            nfiles = len(response['Items'])
-            for fileindex in range(nfiles):
-                hrefcontent = response['Items'][fileindex]['HrefContent']
-                hrefcontents.append(hrefcontent)
-                path = response['Items'][fileindex]['Path']
-                paths.append(path)
-                print("File: {} href {} path {}".format(
-                    fileindex, hrefcontent, path))
-
-        for index in range(len(hrefcontents)):
-            url = '%s?access_token=%s' % (
-                hrefcontents[index], self.access_token)
-            print('downloading %s' % (paths[index]))
-            self.download_dataset(url, paths[index])
-        """
+        # Download all datasets
+        for dataset in datasets:
+            url = '%s?access_token=%s' % (dataset['href'], self.access_token)
+            print('downloading %s' % (dataset['path']))
+            self.download_dataset(url, dataset['path'])
