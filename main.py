@@ -27,4 +27,4 @@ def arg_parser():
 if __name__ == "__main__":
     options = arg_parser()
     bs = BaseSpaceAPI(options.projectid, options.accesstoken)
-    bs.download_projects()
+    bs.upload_basespace_project_to_s3()

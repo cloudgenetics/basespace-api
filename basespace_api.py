@@ -1,5 +1,7 @@
 import os
+import boto3
 import math
+import requests
 from http_session import HTTPSession
 
 
@@ -12,6 +14,16 @@ class BaseSpaceAPI():
         self.access_token = access_token
         self.baseurl = url
         self.session = HTTPSession()
+
+        # Get environment variables
+        AWS_KEY = os.getenv('AWS_KEY')
+        AWS_SECRET = os.environ.get('AWS_SECRET')
+        self.AWS_S3_BUCKET = os.environ.get('AWS_S3_BUCKET')
+        self.s3_client = boto3.client(
+            's3',
+            aws_access_key_id=AWS_KEY,
+            aws_secret_access_key=AWS_SECRET
+        )
 
     def project_biosample_ids(self, maxsamples=1000):
         """Fetch BioSample IDs from a Project
@@ -54,7 +66,7 @@ class BaseSpaceAPI():
         outfile = self.project_id + os.sep + filename
         self.session.download_file(url, outfile)
 
-    def download_projects(self):
+    def upload_basespace_project_to_s3(self):
         """Download project files
         """
 
@@ -98,5 +110,26 @@ class BaseSpaceAPI():
         # Download all datasets
         for dataset in datasets:
             url = '%s?access_token=%s' % (dataset['href'], self.access_token)
-            print('downloading %s' % (dataset['filename']))
+            print('Downloading %s' % (dataset['filename']))
             self.download_dataset(url, dataset['filename'])
+
+            print('Fetching presigned URL')
+            s3object = self.project_id + "/" + dataset['filename']
+            response = self.s3_client.generate_presigned_post(
+                Bucket=self.AWS_S3_BUCKET,
+                Key=s3object,
+                ExpiresIn=10
+            )
+            # Upload file to s3 using presigned URL
+            files = {'file': open(s3object, 'rb')}
+            r = requests.post(
+                response['url'], data=response['fields'], files=files)
+            print('Upload complete: {} status: {}'.format(
+                s3object, r.status_code))
+            # Remove file after upload
+            if (r.status_code in [200, 201, 204]):
+                os.remove(s3object)
+            else:
+                print("Error on uploading file {}".format(s3object))
+        # Remove folder
+        os.rmdir(self.project_id)

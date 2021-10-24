@@ -23,6 +23,7 @@ AWS S3 variables
 ```
 export AWS_KEY=
 export AWS_SECRET=
+export AWS_S3_BUCKET=presigned-uploader
 ```
 
 
