@@ -43,15 +43,15 @@ class BaseSpaceAPI():
                 status = True
         return status
 
-    def download_dataset(self, url, path):
+    def download_dataset(self, url, filename):
         """Download sample dataset
 
         Args:
             url (str): URL from which to download dataset
             path (str): Download path
         """
-        self.project_mkdir(path)
-        outfile = self.project_id + os.sep + path
+        self.project_mkdir(filename)
+        outfile = self.project_id + os.sep + filename
         self.session.download_file(url, outfile)
 
     def download_projects(self):
@@ -92,11 +92,11 @@ class BaseSpaceAPI():
             for data in response['Items']:
                 dataset = dict.fromkeys(['href', 'path'])
                 dataset['href'] = data['HrefContent']
-                dataset['path'] = data['Path']
+                dataset['filename'] = data['Path']
                 datasets.append(dataset)
 
         # Download all datasets
         for dataset in datasets:
             url = '%s?access_token=%s' % (dataset['href'], self.access_token)
-            print('downloading %s' % (dataset['path']))
-            self.download_dataset(url, dataset['path'])
+            print('downloading %s' % (dataset['filename']))
+            self.download_dataset(url, dataset['filename'])

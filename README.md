@@ -1,4 +1,4 @@
-# Fetch BaseSpace files and upload to S3
+# Python BaseSpace API
 > Krishna Kumar
 
 ## Set-up VirtualEnv
@@ -8,6 +8,23 @@ python3 -m venv env
 source env/bin/activate
 python3 -m pip install -r requirements.txt
 ```
+
+## Environment Variables
+
+Set BaseSpace variables and S3
+
+BaseSpace AccessToken
+```
+accessToken=
+projId=
+```
+
+AWS S3 variables
+```
+export AWS_KEY=
+export AWS_SECRET=
+```
+
 
 ## Run script
 ```
