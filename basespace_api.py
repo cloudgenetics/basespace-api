@@ -99,6 +99,12 @@ class BaseSpaceAPI():
 
         print("Files: {} ".format(files))
 
+        for file in files:
+            url = '%s?access_token=%s' % (file[0], self.access_token)
+            print('downloading %s' % (file[0]))
+            self.download_dataset(url, file[1])
+
+        """
         for index in range(len(hrefs)):
             url = '%s?access_token=%s' % (hrefs[index], self.access_token)
             response = self.session.get_json(url)
@@ -116,3 +122,4 @@ class BaseSpaceAPI():
                 hrefcontents[index], self.access_token)
             print('downloading %s' % (paths[index]))
             self.download_dataset(url, paths[index])
+        """
