@@ -1,4 +1,3 @@
-import urllib.request
 import requests
 import json
 import math
@@ -32,7 +31,7 @@ def restrequest(url):
     return r.json()
 
 
-def downloadrestrequest(rawrequest, path):
+def downloadrestrequest(url, path):
     dirname = projectid + os.sep + os.path.dirname(path)
     # print(dirname)
 
@@ -40,24 +39,10 @@ def downloadrestrequest(rawrequest, path):
         if not os.path.isdir(dirname):
             os.makedirs(dirname)
 
-    request = (rawrequest)
-
-    outfile = open(projectid + os.sep + path, 'wb')
-
-    try:
-        response = urllib.request.urlopen(request, timeout=1)
-        outfile.write(response.read())
-        outfile.close()
-
-    except urllib.request.URLError:
-        print('Got an error code:', urllib.request.URLError)
-        outfile.close()
-        downloadrestrequest(rawrequest, path)
-
-    except socket.error:
-        print('Got a socket error: retrying')
-        outfile.close()
-        downloadrestrequest(rawrequest, path)
+    outfile = projectid + os.sep + path
+    r = requests.get(url)
+    with open(outfile, 'wb') as f:
+        f.write(r.content)
 
 
 options = arg_parser()

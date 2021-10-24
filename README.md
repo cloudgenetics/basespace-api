@@ -1,6 +1,14 @@
 # Fetch BaseSpace files and upload to S3
 > Krishna Kumar
 
+## Set-up VirtualEnv
+
+```
+python3 -m venv env
+source env/bin/activate
+python3 -m pip install -r requirements.txt
+```
+
 ## Illumina BaseSpace AccessToken
 
 1. Go to https://developer.basespace.illumina.com/ and log in.
