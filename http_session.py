@@ -5,7 +5,7 @@ from timeout_adapter import TimeoutHTTPAdapter
 
 
 class HTTPSession():
-    def __init__(self, baseurl, retry=3) -> None:
+    def __init__(self, baseurl='', retry=3) -> None:
         # Create session
         self.session = requests.Session()
         assert_status_hook = lambda response, * \
@@ -23,3 +23,8 @@ class HTTPSession():
     def get_json(self, url):
         r = self.session.get(self.baseurl + str(url))
         return r.json()
+
+    def download_file(self, url, outfile):
+        r = self.session.get(self.baseurl + str(url))
+        with open(outfile, 'wb') as f:
+            f.write(r.content)
