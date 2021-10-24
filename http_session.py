@@ -7,25 +7,17 @@ from timeout_adapter import TimeoutHTTPAdapter
 class HTTPSession():
     """HTTP session with retries and base URL
 
-    Methods
-    -------
-    get_json(url)
-        Returns a JSON object from a GET call on url
-
-    download_file(url, file)
-        Write response of GET to a file
+    Attributes:
+        session: HTTP configured session with retries and timeout
+        baseurl: Base URL string
     """
 
     def __init__(self, baseurl='', timeout=2.5, retry=3) -> None:
         """
-        Parameters
-        ----------
-        baseurl : str
-            BaseURL - can be left empty
-        retry : int
-            Number of retries for failed REST attempts
-        timeout : float
-            Time in seconds before timeout
+        Args: 
+            baseurl (str): BaseURL - can be left empty
+            retry (int): Number of retries for failed REST attempts
+            timeout (float): Time in seconds before timeout
         """
         # Create session
         self.session = requests.Session()
@@ -43,22 +35,22 @@ class HTTPSession():
 
     def get_json(self, url):
         """Return a JSON object from GET
-        Parameters
-        ----------
-        url : str
-            url for GET request
+
+        Args: 
+            url (str): URL for GET request
+
+        Returns:
+            json: JSON object from get request
         """
         r = self.session.get(self.baseurl + str(url))
         return r.json()
 
     def download_file(self, url, file):
         """Download file from GET
-        Parameters
-        ----------
-        url : str
-            url for GET request
-        file : str
-            Output file path
+
+        Args:
+            url (str): URL for GET request
+            file (str): Output file path
         """
         r = self.session.get(self.baseurl + str(url))
         with open(file, 'wb') as f:
