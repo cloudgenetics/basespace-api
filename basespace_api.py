@@ -105,15 +105,31 @@ class BaseSpaceAPI():
                 datasets.append(dataset)
 
         s3_client = boto3.client('s3')
+        files = []
         # Download all datasets
         for dataset in datasets:
             url = '%s?access_token=%s' % (dataset['href'], self.access_token)
-            print('Downloading %s' % (dataset['filename']))
-            self.download_dataset(url, dataset['filename'])
-            localfile = self.project_id + "/" + dataset['filename']
-            s3file = uuid + "/" + dataset['filename']
-            response = s3_client.upload_file(localfile, self.AWS_S3_BUCKET, s3file)
+            fname = dataset['filename']
+            print('Downloading %s' % (fname))
+            self.download_dataset(url, fname)
+            localfile = self.project_id + "/" + fname
+            s3file = uuid + "/" + fname
+            upload_status = 200
+            try:
+                response = s3_client.upload_file(localfile, self.AWS_S3_BUCKET, s3file)
+    
+            except ClientError as e:
+                upload_status = 400
+    
+            file = {}
+            file['url'] = 's3://' + self.AWS_S3_BUCKET + '/' + s3file
+            file['name'] = fname
+            file['size'] = os.path.getsize(localfile)
+            file['status'] = upload_status
+            files.append(file)
             print('Upload complete')
 
         # Remove folder
         shutil.rmtree(self.project_id)
+
+        return files

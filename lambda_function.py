@@ -11,8 +11,8 @@ def lambda_handler(event, context):
     # Create a BaseSpace instance
     bs = BaseSpaceAPI(projectid, access_token)
     # Upload to S3
-    bs.upload_basespace_project_to_s3(uuid)
+    files = bs.upload_basespace_project_to_s3(uuid)
     return {
         'statusCode': 200,
-        'body': 'success'
+        'body': json.dumps(files)
     }
