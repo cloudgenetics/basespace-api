@@ -43,3 +43,7 @@ zip -r ../deploy.zip .
 cd ..
 zip -g deploy.zip basespace_api.py http_session.py lambda_function.py timeout_adapter.py 
 ```
+
+# Test
+
+aws lambda invoke --function-name basespace-s3:2 --payload file://data.json response.json --cli-binary-format raw-in-base64-out
