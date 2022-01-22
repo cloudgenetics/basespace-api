@@ -1,6 +1,8 @@
 # Python BaseSpace Lambda API
 > Krishna Kumar
 
+Check out the `standalone` branch for a standalone version of this app, without running on Lambda.
+
 ## Set-up VirtualEnv
 
 ```
