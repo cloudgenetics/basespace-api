@@ -125,7 +125,8 @@ class BaseSpaceAPI():
             file['url'] = 's3://' + self.AWS_S3_BUCKET + '/' + s3file
             file['name'] = fname
             file['size'] = os.path.getsize(localfile)
-            file['status'] = upload_status
+            file['status'] = True if upload_status == 200 else False
+            file['datasetid'] = uuid
             files.append(file)
             print('Upload complete')
 
