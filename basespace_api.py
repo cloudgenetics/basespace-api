@@ -9,7 +9,7 @@ class BaseSpaceAPI():
     """BaseSpace Python API
     """
 
-    def __init__(self, project_id,  access_token, url='https://api.basespace.illumina.com/v2/') -> None:
+    def __init__(self, project_id,  access_token, url='https://api.euc1.sh.basespace.illumina.com/v2/') -> None:
         self.project_id = project_id
         self.access_token = access_token
         self.baseurl = url
