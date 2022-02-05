@@ -1,5 +1,6 @@
 import os
 import boto3
+from botocore.exceptions import ClientError
 import math
 import requests
 from http_session import HTTPSession
@@ -80,7 +81,8 @@ class BaseSpaceAPI():
                 dataset['href'] = data['HrefContent']
                 dataset['filename'] = data['Path']
                 datasets.append(dataset)
-        
+                
+        s3_client = boto3.client('s3')
         files = []
         # Download all datasets
         for dataset in datasets:
@@ -93,7 +95,6 @@ class BaseSpaceAPI():
             upload_status = 200
             try:
                 response = s3_client.upload_file(localfile, self.AWS_S3_BUCKET, s3file)
-    
             except ClientError as e:
                 upload_status = 400
     
