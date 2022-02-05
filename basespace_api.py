@@ -69,17 +69,10 @@ class BaseSpaceAPI():
     def upload_basespace_project_to_s3(self):
         """Download project files
         """
-
-        # Find the Biosample ID from project id first  assume fewer than 1000 samples in a project
-        biosamples = self.project_biosample_ids(maxsamples=1000)
-
-        samples_csv = ','.join([str(i) for i in biosamples])
-        print("Samples {}".format(samples_csv))
-
         # Call API to get datasets based on biosamples
         url = self.baseurl + \
-            'datasets?inputbiosamples=%s&access_token=%s' % (
-                samples_csv, self.access_token)
+            'datasets?projectid=%s&access_token=%s' % (
+                self.project_id, self.access_token)
 
         response = self.session.get_json(url)
         total_count = int(response['Paging']['TotalCount'])
@@ -88,14 +81,14 @@ class BaseSpaceAPI():
         hrefs = []
         for index in range(noffsets):
             offset = 1000*index
-            url = self.baseurl + 'datasets?inputbiosamples=%s&access_token=%s&limit=1000&Offset=%s' % (
-                samples_csv, self.access_token, offset)
+            url = self.baseurl + 'datasets?projectid=%s&access_token=%s&limit=1000&Offset=%s' % (
+                self.project_id, self.access_token, offset)
             response = self.session.get_json(url)
             nDatasets = len(response['Items'])
             for fileindex in range(nDatasets):
                 href = response['Items'][fileindex]['HrefFiles']
                 hrefs.append(href)
-
+        
         # Get the download filepath (HrefContent) and filename (Path)
         datasets = []
         for href in hrefs:
@@ -106,13 +99,12 @@ class BaseSpaceAPI():
                 dataset['href'] = data['HrefContent']
                 dataset['filename'] = data['Path']
                 datasets.append(dataset)
-
+        
         # Download all datasets
         for dataset in datasets:
             url = '%s?access_token=%s' % (dataset['href'], self.access_token)
             print('Downloading %s' % (dataset['filename']))
             self.download_dataset(url, dataset['filename'])
-
             print('Fetching presigned URL')
             s3object = self.project_id + "/" + dataset['filename']
             response = self.s3_client.generate_presigned_post(
@@ -131,5 +123,6 @@ class BaseSpaceAPI():
                 os.remove(s3object)
             else:
                 print("Error on uploading file {}".format(s3object))
+
         # Remove folder
         os.rmdir(self.project_id)
