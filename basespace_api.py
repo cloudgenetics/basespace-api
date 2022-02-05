@@ -25,22 +25,6 @@ class BaseSpaceAPI():
             aws_secret_access_key=AWS_SECRET
         )
 
-    def project_biosample_ids(self, maxsamples=1000):
-        """Fetch BioSample IDs from a Project
-
-        Args:
-            limit (int): Maximum number of biosamples
-        """
-        # Find the Biosample ID from project id first  assume fewer than 1000 default max samples in a project
-        response = self.session.get_json(self.baseurl + 'biosamples?projectid=%s&access_token=%s&limit=%d' % (
-            self.project_id, self.access_token, maxsamples))
-
-        biosamples = []
-        for sample in response['Items']:
-            biosamples.append(sample['Id'])
-
-        return biosamples
-
     def project_mkdir(self, path):
         """Make directory for a project
 
