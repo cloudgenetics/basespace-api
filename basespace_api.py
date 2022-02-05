@@ -19,23 +19,6 @@ class BaseSpaceAPI():
         # Get environment variables
         self.AWS_S3_BUCKET = os.environ.get('AWS_S3_BUCKET')
 
-
-    def project_biosample_ids(self, maxsamples=1000):
-        """Fetch BioSample IDs from a Project
-
-        Args:
-            limit (int): Maximum number of biosamples
-        """
-        # Find the Biosample ID from project id first  assume fewer than 1000 default max samples in a project
-        response = self.session.get_json(self.baseurl + 'biosamples?projectid=%s&access_token=%s&limit=%d' % (
-            self.project_id, self.access_token, maxsamples))
-
-        biosamples = []
-        for sample in response['Items']:
-            biosamples.append(sample['Id'])
-
-        return biosamples
-
     def project_mkdir(self, path):
         """Make directory for a project
 
@@ -67,16 +50,10 @@ class BaseSpaceAPI():
         """Download project files
         """
         os.chdir('/mnt/efs/')
-        # Find the Biosample ID from project id first  assume fewer than 1000 samples in a project
-        biosamples = self.project_biosample_ids(maxsamples=1000)
-
-        samples_csv = ','.join([str(i) for i in biosamples])
-        print("Samples {}".format(samples_csv))
-
         # Call API to get datasets based on biosamples
         url = self.baseurl + \
-            'datasets?inputbiosamples=%s&access_token=%s' % (
-                samples_csv, self.access_token)
+            'datasets?projectid=%s&access_token=%s' % (
+                self.project_id, self.access_token)
 
         response = self.session.get_json(url)
         total_count = int(response['Paging']['TotalCount'])
@@ -85,14 +62,14 @@ class BaseSpaceAPI():
         hrefs = []
         for index in range(noffsets):
             offset = 1000*index
-            url = self.baseurl + 'datasets?inputbiosamples=%s&access_token=%s&limit=1000&Offset=%s' % (
-                samples_csv, self.access_token, offset)
+            url = self.baseurl + 'datasets?projectid=%s&access_token=%s&limit=1000&Offset=%s' % (
+                self.project_id, self.access_token, offset)
             response = self.session.get_json(url)
             nDatasets = len(response['Items'])
             for fileindex in range(nDatasets):
                 href = response['Items'][fileindex]['HrefFiles']
                 hrefs.append(href)
-
+        
         # Get the download filepath (HrefContent) and filename (Path)
         datasets = []
         for href in hrefs:
@@ -103,8 +80,7 @@ class BaseSpaceAPI():
                 dataset['href'] = data['HrefContent']
                 dataset['filename'] = data['Path']
                 datasets.append(dataset)
-
-        s3_client = boto3.client('s3')
+        
         files = []
         # Download all datasets
         for dataset in datasets:
