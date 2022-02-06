@@ -11,15 +11,15 @@ class BaseSpaceAPI():
     """BaseSpace Python API
     """
 
-    def __init__(self, project_id,  access_token, url='https://api.euc1.sh.basespace.illumina.com/v2/') -> None:
+    def __init__(self, project_id,  access_token, s3bucket, url) -> None:
         self.project_id = project_id
         self.access_token = access_token
         self.baseurl = url
         self.session = HTTPSession()
 
         # Get environment variables
-        self.AWS_S3_BUCKET = os.environ.get('AWS_S3_BUCKET')
-
+        self.AWS_S3_BUCKET = s3bucket
+        
     def project_mkdir(self, path):
         """Make directory for a project
 
