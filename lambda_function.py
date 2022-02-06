@@ -11,9 +11,13 @@ def lambda_handler(event, context):
     uuid = data['uuid']
     s3bucket = data['s3bucket']
     apiurl = 'https://api.euc1.sh.basespace.illumina.com/v2/'
-    if 'apiUrl' in data:
-        apiurl = data['apiUrl']
-        
+    if 'region' in data:
+        region = data['region']
+        if region == 'US':
+            apiurl = 'https://api.basespace.illumina.com/v2/'
+        if region == 'UK':
+            apiurl = 'https://euw2.sh.basespace.illumina.com/v2/'
+            
     # Create a BaseSpace instance
     bs = BaseSpaceAPI(projectid, access_token, s3bucket, apiurl)
     # Upload to S3
