@@ -1,36 +1,35 @@
 import os
 import boto3
+from botocore.exceptions import ClientError
 import math
 import requests
 from http_session import HTTPSession
-
+import shutil
+import concurrent.futures
+from multiprocessing import Pool, cpu_count
+from functools import partial
 
 class BaseSpaceAPI():
     """BaseSpace Python API
     """
 
-    def __init__(self, project_id,  access_token, url='https://api.euc1.sh.basespace.illumina.com/v2/') -> None:
+    def __init__(self, project_id,  access_token, s3bucket, url) -> None:
         self.project_id = project_id
         self.access_token = access_token
         self.baseurl = url
         self.session = HTTPSession()
-
+        self.uuid = None
+        self.s3_client = boto3.client('s3')
         # Get environment variables
-        AWS_KEY = os.getenv('AWS_KEY')
-        AWS_SECRET = os.environ.get('AWS_SECRET')
-        self.AWS_S3_BUCKET = os.environ.get('AWS_S3_BUCKET')
-        self.s3_client = boto3.client(
-            's3',
-            aws_access_key_id=AWS_KEY,
-            aws_secret_access_key=AWS_SECRET
-        )
-
+        self.AWS_S3_BUCKET = s3bucket
+        
     def project_mkdir(self, path):
         """Make directory for a project
 
         Args:
             path (str): Path to create directory
         """
+        
         dirname = self.project_id + os.sep + os.path.dirname(path)
         status = False
         if dirname != '':
@@ -46,13 +45,51 @@ class BaseSpaceAPI():
             url (str): URL from which to download dataset
             path (str): Download path
         """
+        
         self.project_mkdir(filename)
         outfile = self.project_id + os.sep + filename
-        self.session.download_file(url, outfile)
+        #self.session.download_file(url, outfile)
 
-    def upload_basespace_project_to_s3(self):
+    def download_upload(self,dataset, uuid):
+        url = '%s?access_token=%s' % (dataset['href'], self.access_token)
+        fname = dataset['filename']
+        print('Downloading %s' % (fname))
+        # self.download_dataset(url, fname)
+        self.project_mkdir(fname)
+        outfile = self.project_id + os.sep + fname
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with open(outfile, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192): 
+                    # If you have chunk encoded response uncomment if
+                    # and set chunk_size parameter to None.
+                    #if chunk: 
+                    f.write(chunk)
+
+        localfile = self.project_id + "/" + fname
+        s3file = uuid + "/" + fname
+        upload_status = 200
+        '''
+        try:
+            response = self.s3_client.upload_file(localfile, self.AWS_S3_BUCKET, s3file)
+        except ClientError as e:
+            upload_status = 400
+
+        file = {}
+        file['url'] = 's3://' + self.AWS_S3_BUCKET + '/' + s3file
+        file['name'] = fname
+        file['size'] = os.path.getsize(localfile)
+        file['status'] = True if upload_status == 200 else False
+        file['datasetid'] = uuid
+        #files.append(file)
+        print('Upload complete')
+        '''
+        
+    def upload_basespace_project_to_s3(self, uuid):
         """Download project files
         """
+        # os.chdir('/mnt/efs/')
+        self.uuid = uuid
         # Call API to get datasets based on biosamples
         url = self.baseurl + \
             'datasets?projectid=%s&access_token=%s' % (
@@ -83,30 +120,21 @@ class BaseSpaceAPI():
                 dataset['href'] = data['HrefContent']
                 dataset['filename'] = data['Path']
                 datasets.append(dataset)
-        
-        # Download all datasets
-        for dataset in datasets:
-            url = '%s?access_token=%s' % (dataset['href'], self.access_token)
-            print('Downloading %s' % (dataset['filename']))
-            self.download_dataset(url, dataset['filename'])
-            print('Fetching presigned URL')
-            s3object = self.project_id + "/" + dataset['filename']
-            response = self.s3_client.generate_presigned_post(
-                Bucket=self.AWS_S3_BUCKET,
-                Key=s3object,
-                ExpiresIn=10
-            )
-            # Upload file to s3 using presigned URL
-            files = {'file': open(s3object, 'rb')}
-            r = requests.post(
-                response['url'], data=response['fields'], files=files)
-            print('Upload complete: {} status: {}'.format(
-                s3object, r.status_code))
-            # Remove file after upload
-            if (r.status_code in [200, 201, 204]):
-                os.remove(s3object)
-            else:
-                print("Error on uploading file {}".format(s3object))
 
+        '''       
+        s3_client = boto3.client('s3')
+        files = []
+        # Download all datasets
+        #for dataset in datasets:
+        #with concurrent.futures.ThreadPoolExecutor() as exector : 
+        #    exector.map(self.download_upload, datasets)
+        pool = Pool(cpu_count())
+        download_func = partial(self.download_upload, uuid = uuid)
+        results = pool.map(download_func, datasets)
+        pool.close()
+        pool.join()
         # Remove folder
-        os.rmdir(self.project_id)
+        shutil.rmtree(self.project_id)
+        ''' 
+
+        return datasets
