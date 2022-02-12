@@ -1,8 +1,9 @@
 import sys
 import optparse
-
-from basespace_api import BaseSpaceAPI
-
+from multiprocessing.pool import ThreadPool
+from functools import partial
+import shutil
+import basespace_api as bs
 
 def arg_parser():
     """Argument parser
@@ -10,7 +11,7 @@ def arg_parser():
     parser = optparse.OptionParser()
     parser.add_option('-p', dest='projectid', help='Project ID: required')
     parser.add_option('-a', dest='accesstoken', help='Access Token: required')
-    parser.add_option('-s', dest='s3bucket', help='S3bucet: required')
+    parser.add_option('-s', dest='s3bucket', help='s3bucket: required')
     parser.add_option('-u', dest='uuid', help='UUID: required')
     (options, args) = parser.parse_args()
 
@@ -29,8 +30,17 @@ def arg_parser():
 
     return options
 
-
 if __name__ == "__main__":
     options = arg_parser()
-    bs = BaseSpaceAPI(options.projectid, options.accesstoken, options.s3bucket, url='https://api.euc1.sh.basespace.illumina.com/v2/')
-    bs.upload_basespace_project_to_s3(options.uuid)
+    # os.chdir('/mnt/efs/')
+    datasets = bs.fetch_datasets(options.projectid, options.accesstoken, apiurl='https://api.euc1.sh.basespace.illumina.com/v2/')
+
+    downpool = ThreadPool(processes=len(datasets)*2) 
+    download_func = partial(bs.download, projectid = options.projectid, access_token = options.accesstoken)
+    downpool.map(download_func, datasets) 
+    print("All downloads complete")
+    files = []
+    for dataset in datasets:
+        file = bs.upload(dataset, options.projectid, options.uuid, options.s3bucket)
+        files.append(file)
+    shutil.rmtree(options.projectid)
